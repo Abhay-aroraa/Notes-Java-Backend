@@ -12,6 +12,8 @@ public class NoteRequest {
     @Id
     private String id;
 
+    public boolean pinned = false;
+
     private String title;
     private String content;
 }
