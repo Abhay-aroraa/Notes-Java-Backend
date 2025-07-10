@@ -25,6 +25,9 @@ public class NoteService {
         return notesRepo.save(note);
     }
 
+    public Optional<NoteRequest> findById(String noteId){
+        return notesRepo.findById(noteId);
+    }
     public NoteRequest deleteNoteById(String noteId) {
         NoteRequest note = notesRepo.findById(noteId).orElse(null);
         if (note != null) {

@@ -26,18 +26,29 @@ return noteService.getAllNotes();
 @PostMapping
 public NoteRequest createNote(@RequestBody NoteRequest note) {
         return noteService.saveNote(note);
-    }
-
-    @DeleteMapping("/id/{noteId}")
+}
+ @DeleteMapping("/id/{noteId}")
     public NoteRequest deleteNoteById(@PathVariable String noteId) {
         return noteService.deleteNoteById(noteId);
-    }
-    @PutMapping("id/{noteId}")
+    }@PutMapping("id/{noteId}")
     public ResponseEntity<NoteRequest> updatesNote(@PathVariable String noteId, @RequestBody NoteRequest note) {
         return noteService.updateNote(noteId, note)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());            // 404 Not Found
     }
+    @PutMapping("pin/{noteId}")
+    public ResponseEntity<NoteRequest> pinNotes(@PathVariable String noteId) {
+        Optional<NoteRequest> noteRequestOptional = noteService.findById(noteId);
+
+        if (noteRequestOptional.isPresent()) {
+            NoteRequest noteRequest = noteRequestOptional.get();
+            noteRequest.setPinned(!noteRequest.isPinned());
+            return ResponseEntity.ok(noteService.saveNote(noteRequest));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 
 
 
