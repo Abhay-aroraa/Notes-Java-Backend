@@ -49,8 +49,34 @@ public NoteRequest createNote(@RequestBody NoteRequest note) {
         }
     }
 
+    @PutMapping("archieve/{noteId}")
+    public ResponseEntity<NoteRequest> archieveNote(@PathVariable String noteId){
+    Optional<NoteRequest> optionalArchieve = noteService.findById(noteId);
 
+    if(optionalArchieve.isPresent()){
+        NoteRequest noteRequest = optionalArchieve.get();
+        noteRequest.setArchieve(!noteRequest.isArchieve());
+        return ResponseEntity.ok(noteService.saveNote(noteRequest));
+    }else {
+        return ResponseEntity.notFound().build();
+    }
 
+    }
+
+    @PutMapping("trash/{noteId}")
+    public ResponseEntity<NoteRequest> trashNote(@PathVariable String noteId){
+        Optional<NoteRequest> optionalTrash = noteService.findById(noteId);
+
+        if(optionalTrash.isPresent()){
+            NoteRequest noteRequest = optionalTrash.get();
+            noteRequest.setTrash(!noteRequest.isTrash());
+
+            return ResponseEntity.ok(noteService.saveNote(noteRequest));
+        }else {
+            return ResponseEntity.notFound().build();
+        }
+
+    }
 
 
 }

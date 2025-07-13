@@ -13,6 +13,8 @@ public class NoteRequest {
     private String id;
 
     public boolean pinned = false;
+    public boolean archieve = false;
+    public boolean trash = false;
 
     private String title;
     private String content;
