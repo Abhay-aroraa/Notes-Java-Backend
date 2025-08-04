@@ -55,7 +55,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // Frontend origin
+        config.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",                         // local dev
+                "https://notes-react-frontend.vercel.app"        // deployed frontend
+        ));
+// Frontend origin
         config.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
         config.setExposedHeaders(Arrays.asList("Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
