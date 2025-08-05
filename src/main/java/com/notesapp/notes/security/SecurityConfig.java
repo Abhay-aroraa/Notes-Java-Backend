@@ -32,8 +32,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()  // 🔓 TEMPORARY: allow all requests for debugging
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/send-otp",
+                                "/api/auth/verify-otp",
+                                "/api/auth/reset-password",
+                                "/api/ai"
+                        ).permitAll()
+                        .anyRequest().authenticated()
                 )
+
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -46,8 +56,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",                          // local dev
-                "https://notes-react-frontend.vercel.app"         // deployed frontend
+                "http://localhost:5173",
+                "https://notes-react-frontend.vercel.app"
         ));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
         config.setExposedHeaders(Arrays.asList("Authorization"));
