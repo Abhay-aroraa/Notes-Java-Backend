@@ -45,9 +45,18 @@ public class AIService {
                 }
             }
             return "No response from AI.";
+
+        } catch (org.springframework.web.client.HttpClientErrorException httpError) {
+            System.out.println("========= AI ERROR START =========");
+            System.out.println("Status Code: " + httpError.getStatusCode());
+            System.out.println("Response Body: " + httpError.getResponseBodyAsString());
+            System.out.println("========= AI ERROR END =========");
+            return "Something went wrong while contacting AI.";
+
         } catch (Exception e) {
             e.printStackTrace();
             return "Something went wrong while contacting AI.";
         }
+
     }
 }
