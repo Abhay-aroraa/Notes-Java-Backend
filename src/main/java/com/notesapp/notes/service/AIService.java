@@ -21,10 +21,8 @@ public class AIService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
-        // Use provided origin or fallback to deployed site
-        String referer = (origin != null && !origin.isEmpty())
-                ? origin
-                : "https://notes-react-frontend.vercel.app";
+        // 🔐 Always use production referer — localhost gets blocked by OpenRouter
+        String referer = "https://notes-react-frontend.vercel.app";
 
         headers.add("HTTP-Referer", referer);
         headers.add("X-Title", "Notes App");
@@ -52,5 +50,4 @@ public class AIService {
             return "Something went wrong while contacting AI.";
         }
     }
-
 }
