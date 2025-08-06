@@ -29,7 +29,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         // ✅ SKIP JWT auth for public endpoints
-        if (path.startsWith("/api/auth")) {
+        if (path.startsWith("/api/auth") || path.startsWith("/api/ai")) {
             filterChain.doFilter(request, response);
             return;
         }
