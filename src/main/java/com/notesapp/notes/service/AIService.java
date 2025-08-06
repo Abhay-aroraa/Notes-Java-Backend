@@ -16,27 +16,41 @@ public class AIService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final String apiUrl = "https://openrouter.ai/api/v1/chat/completions";
 
-    public String getAIResponse(String userMessage) {
+    public String getAIResponse(String userMessage, String origin) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey); // ✅ use OpenRouter API Key
-        headers.add("HTTP-Referer", "http://localhost:5173"); // your site
-        headers.add("X-Title", "Notes App"); // optional but recommended
+        headers.setBearerAuth(apiKey);
+
+        // Use provided origin or fallback to deployed site
+        String referer = (origin != null && !origin.isEmpty())
+                ? origin
+                : "https://notes-react-frontend.vercel.app";
+
+        headers.add("HTTP-Referer", referer);
+        headers.add("X-Title", "Notes App");
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "mistralai/mistral-7b-instruct"); // ✅ free model
-
-        List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "user", "content", userMessage));
-        requestBody.put("messages", messages);
+        requestBody.put("model", "mistralai/mistral-7b-instruct");
+        requestBody.put("messages", List.of(Map.of("role", "user", "content", userMessage)));
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, request, Map.class);
-        List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, request, Map.class);
 
-        Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-        return message.get("content").toString();
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
 
+                if (choices != null && !choices.isEmpty()) {
+                    Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+                    return message.get("content").toString();
+                }
+            }
+            return "No response from AI.";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Something went wrong while contacting AI.";
+        }
     }
+
 }

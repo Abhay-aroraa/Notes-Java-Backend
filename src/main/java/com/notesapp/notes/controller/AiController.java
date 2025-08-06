@@ -18,14 +18,19 @@ public class AiController {
         this.aiService = aiService;
     }
 
+
     @PostMapping
-    public ResponseEntity<Map<String, String>> getAIResponse(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, String>> getAIResponse(
+            @RequestBody Map<String, String> request,
+            @RequestHeader(value = "Origin", required = false) String origin
+    ) {
         String prompt = request.get("prompt");
-        String response = aiService.getAIResponse(prompt);
+        String response = aiService.getAIResponse(prompt, origin);
 
         Map<String, String> result = new HashMap<>();
         result.put("response", response);
 
         return ResponseEntity.ok(result);
     }
+
 }
