@@ -14,42 +14,44 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-@Component
-public class JwtFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtService jwtService;
+        @Component
+        public class JwtFilter extends OncePerRequestFilter {
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+            @Autowired
+            private JwtService jwtService;
 
-        String path = request.getRequestURI();
+            @Override
+            protected void doFilterInternal(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            FilterChain filterChain)
+                    throws ServletException, IOException {
 
-        // ✅ SKIP JWT auth for public endpoints
-        if (path.startsWith("/api/auth") || path.startsWith("/api/ai")) {
-            filterChain.doFilter(request, response);
-            return;
+                String path = request.getRequestURI();
+
+                // ✅ SKIP JWT auth for public endpoints including /api/ai
+                if (path.startsWith("/api/auth") || path.startsWith("/api/ai")) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                String authHeader = request.getHeader("Authorization");
+                String token = null;
+                String email = null;
+
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    token = authHeader.substring(7);
+                    email = jwtService.extractUsername(token);
+                }
+
+                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(email, null, java.util.Collections.emptyList());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+
+                filterChain.doFilter(request, response);
+            }
         }
 
-        String authHeader = request.getHeader("Authorization");
-        String token = null;
-        String email = null;
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-            email = jwtService.extractUsername(token);
-        }
-
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(email, null, java.util.Collections.emptyList());
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authToken);
-        }
-
-        filterChain.doFilter(request, response);
-    }
-}
