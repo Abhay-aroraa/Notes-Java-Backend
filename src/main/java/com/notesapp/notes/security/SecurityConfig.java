@@ -40,7 +40,8 @@ public class SecurityConfig {
                                 "/api/auth/verify-otp",
                                 "/api/auth/reset-password",
                                 "/api/ai/**",
-                                "/api/ai"
+                                "/api/ai",
+                                "/active"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
