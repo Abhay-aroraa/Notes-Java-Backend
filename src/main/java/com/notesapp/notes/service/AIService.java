@@ -1,14 +1,21 @@
 package com.notesapp.notes.service;
 
+import com.notesapp.notes.exception.AIServiceException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
 @Service
 public class AIService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AIService.class);
 
     @Value("${openrouter.api.key}")
     private String apiKey;
@@ -17,13 +24,13 @@ public class AIService {
     private final String apiUrl = "https://openrouter.ai/api/v1/chat/completions";
 
     public String getAIResponse(String userMessage, String origin) {
+        logger.info("Sending AI request for user message: {}", userMessage);
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
-        // 🔐 Always use production referer — localhost gets blocked by OpenRouter
         String referer = "https://notes-react-frontend.vercel.app";
-
         headers.add("HTTP-Referer", referer);
         headers.add("X-Title", "Notes App");
 
@@ -41,18 +48,23 @@ public class AIService {
 
                 if (choices != null && !choices.isEmpty()) {
                     Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-                    return message.get("content").toString();
+                    String aiResponse = message.get("content").toString();
+                    logger.info("Received AI response successfully.");
+                    return aiResponse;
+                } else {
+                    logger.warn("No choices found in AI response.");
+                    throw new AIServiceException("No choices found in AI response.");
                 }
+            } else {
+                logger.warn("AI response status not OK: {}", response.getStatusCode());
+                throw new AIServiceException("AI service returned status: " + response.getStatusCode());
             }
-            return "No response from AI.";
-
-        } catch (org.springframework.web.client.HttpClientErrorException httpError) {
-            return "Something went wrong while contacting AI.";
-
+        } catch (HttpClientErrorException httpError) {
+            logger.error("HTTP error while contacting AI: {}", httpError.getStatusCode(), httpError);
+            throw new AIServiceException("Failed to contact AI service due to client error: " + httpError.getStatusCode(), httpError);
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Something went wrong while contacting AI.";
+            logger.error("Unexpected error while contacting AI", e);
+            throw new AIServiceException("Unexpected error occurred while contacting AI service.", e);
         }
-
     }
 }

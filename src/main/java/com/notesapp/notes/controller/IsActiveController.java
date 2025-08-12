@@ -11,4 +11,3 @@ public class IsActiveController {
         return "Yes";
     }
 }
-

@@ -1,9 +1,12 @@
 package com.notesapp.notes.controller;
 
 import com.notesapp.notes.Repository.UserRepo;
+import com.notesapp.notes.exception.NoteNotFoundException;
+import com.notesapp.notes.exception.UserNotFoundException;
 import com.notesapp.notes.model.NoteRequest;
 import com.notesapp.notes.model.User;
 import com.notesapp.notes.service.NoteService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +18,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/note")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class NoteController {
 
     @Autowired
@@ -23,79 +27,75 @@ public class NoteController {
     @Autowired
     private UserRepo userRepo;
 
-    // ✅ Get all notes of logged-in user
     @GetMapping
     public List<NoteRequest> getAllNotes() {
-        return noteService.getAllNotes(); // this handles email → userId → fetch notes
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("API Request: Get all notes for user {}", email);
+        return noteService.getAllNotes();
     }
 
-    // ✅ Create a new note and assign userId
     @PostMapping
     public NoteRequest createNote(@RequestBody NoteRequest note) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        log.info("API Request: User {} creating a new note with title: {}", email, note.getTitle());
+
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + email));
+
         note.setUserId(user.getId());
         return noteService.saveNote(note);
     }
 
-    // ✅ Delete note
     @DeleteMapping("/id/{noteId}")
     public NoteRequest deleteNoteById(@PathVariable String noteId) {
-        return noteService.deleteNoteById(noteId);
+        log.info("API Request: Delete note {}", noteId);
+        return noteService.deleteNoteById(noteId); // throws NoteNotFoundException if not found
     }
 
-    // ✅ Update note content
     @PutMapping("id/{noteId}")
-    public ResponseEntity<NoteRequest> updatesNote(@PathVariable String noteId, @RequestBody NoteRequest note) {
+    public ResponseEntity<NoteRequest> updateNote(@PathVariable String noteId, @RequestBody NoteRequest note) {
+        log.info("API Request: Update note {}", noteId);
         return noteService.updateNote(noteId, note)
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new NoteNotFoundException("Note not found with ID: " + noteId));
     }
 
-    // ✅ Pin/unpin note
     @PutMapping("pin/{noteId}")
-    public ResponseEntity<NoteRequest> pinNotes(@PathVariable String noteId) {
-        Optional<NoteRequest> noteRequestOptional = noteService.findById(noteId);
-        if (noteRequestOptional.isPresent()) {
-            NoteRequest noteRequest = noteRequestOptional.get();
-            noteRequest.setPinned(!noteRequest.isPinned());
-            return ResponseEntity.ok(noteService.saveNote(noteRequest));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<NoteRequest> pinNote(@PathVariable String noteId) {
+        log.info("API Request: Toggle pin for note {}", noteId);
+        NoteRequest noteRequest = noteService.findById(noteId)
+                .orElseThrow(() -> new NoteNotFoundException("Note not found with ID: " + noteId));
+
+        noteRequest.setPinned(!noteRequest.isPinned());
+        return ResponseEntity.ok(noteService.saveNote(noteRequest));
     }
 
-    // ✅ Archive/unarchive note
     @PutMapping("archieve/{noteId}")
-    public ResponseEntity<NoteRequest> archieveNote(@PathVariable String noteId) {
-        Optional<NoteRequest> optionalArchieve = noteService.findById(noteId);
-        if (optionalArchieve.isPresent()) {
-            NoteRequest noteRequest = optionalArchieve.get();
-            noteRequest.setArchieve(!noteRequest.isArchieve());
-            return ResponseEntity.ok(noteService.saveNote(noteRequest));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<NoteRequest> archiveNote(@PathVariable String noteId) {
+        log.info("API Request: Toggle archive for note {}", noteId);
+        NoteRequest noteRequest = noteService.findById(noteId)
+                .orElseThrow(() -> new NoteNotFoundException("Note not found with ID: " + noteId));
+
+        noteRequest.setArchieve(!noteRequest.isArchieve());
+        return ResponseEntity.ok(noteService.saveNote(noteRequest));
     }
 
-    // ✅ Trash/restore note
     @PutMapping("trash/{noteId}")
     public ResponseEntity<NoteRequest> trashNote(@PathVariable String noteId) {
-        Optional<NoteRequest> optionalTrash = noteService.findById(noteId);
-        if (optionalTrash.isPresent()) {
-            NoteRequest noteRequest = optionalTrash.get();
-            noteRequest.setTrash(!noteRequest.isTrash());
-            return ResponseEntity.ok(noteService.saveNote(noteRequest));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        log.info("API Request: Toggle trash for note {}", noteId);
+        NoteRequest noteRequest = noteService.findById(noteId)
+                .orElseThrow(() -> new NoteNotFoundException("Note not found with ID: " + noteId));
+
+        noteRequest.setTrash(!noteRequest.isTrash());
+        return ResponseEntity.ok(noteService.saveNote(noteRequest));
     }
 
-    // ✅ Update note color
     @PutMapping("color/{noteId}")
-    public ResponseEntity<?> updateColor(@PathVariable String noteId, @RequestBody NoteRequest request) {
+    public ResponseEntity<NoteRequest> updateColor(@PathVariable String noteId, @RequestBody NoteRequest request) {
+        log.info("API Request: Update color for note {} to {}", noteId, request.getColor());
         NoteRequest note = noteService.findById(noteId)
-                .orElseThrow(() -> new RuntimeException("Note not found"));
+                .orElseThrow(() -> new NoteNotFoundException("Note not found with ID: " + noteId));
+
         note.setColor(request.getColor());
         return ResponseEntity.ok(noteService.saveNote(note));
     }
