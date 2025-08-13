@@ -22,6 +22,7 @@ public class AiController {
         this.aiService = aiService;
     }
 
+
     @PostMapping
     public ResponseEntity<Map<String, String>> getAIResponse(
             @RequestBody Map<String, String> request,
