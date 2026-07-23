@@ -35,7 +35,7 @@ public class AIService {
         headers.add("X-Title", "Notes App");
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "mistralai/mistral-7b-instruct");
+        requestBody.put("model", "google/gemini-2.5-flash");
         requestBody.put("messages", List.of(Map.of("role", "user", "content", userMessage)));
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
